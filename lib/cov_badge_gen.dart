@@ -15,16 +15,25 @@ class CovBadgeGen {
   late File _sourceFile;
   late File _outputFile;
 
-  String subject = 'Coverage';
+  final String? subject;
 
-  String successColor = '#00e676';
-  String warningColor = '#ff9100';
-  String errorColor = '#ff3d00';
+  final String? successColor;
+  final String? warningColor;
+  final String? errorColor;
 
-  int warningThreshold = 80; // 80 % and below
-  int errorThreshold = 60; // 60% & below
+  final int? warningThreshold; // 80 % and below
+  final int? errorThreshold; // 60% & below
 
-  CovBadgeGen(this.lcovPath, this.outputDir) {
+  CovBadgeGen(
+    this.lcovPath,
+    this.outputDir, {
+    this.subject,
+    this.successColor,
+    this.warningColor,
+    this.errorColor,
+    this.warningThreshold,
+    this.errorThreshold,
+  }) {
     _setupLogger();
     _createFile();
   }
@@ -43,10 +52,55 @@ class CovBadgeGen {
       defaultsTo: './coverage',
       help: 'Output dir of generated badge',
     );
+    parser.addOption(
+      'subject',
+      abbr: 't',
+      defaultsTo: 'Coverage',
+      help: 'This value will be added to left side of badge as title',
+    );
+    parser.addOption(
+      'success_color',
+      abbr: 's',
+      defaultsTo: '#00e676',
+      help:
+          'Success color will show when coverage ratio is above warning threshold',
+    );
+    parser.addOption(
+      'warning_color',
+      abbr: 'w',
+      defaultsTo: '#ff9100',
+      help:
+          'Warning color will show when coverage ratio is above error threshold',
+    );
+    parser.addOption(
+      'error_color',
+      abbr: 'e',
+      defaultsTo: '#ff3d00',
+      help:
+          'Error color will show when coverage ratio is below or equal error threshold',
+    );
+    parser.addOption(
+      'warning_threshold',
+      abbr: 'W',
+      defaultsTo: '80',
+      help: 'Warning threshold will be used to determine warning color',
+    );
+    parser.addOption(
+      'error_threshold',
+      abbr: 'E',
+      defaultsTo: '60',
+      help: 'Error threshold will be used to determine error color',
+    );
     final results = parser.parse(args);
     return CovBadgeGen(
       results['lcov_path'],
       results['output_dir'],
+      subject: results['subject'],
+      successColor: results['success_color'],
+      warningColor: results['warning_color'],
+      errorColor: results['error_color'],
+      warningThreshold: int.parse(results['warning_threshold']),
+      errorThreshold: int.parse(results['error_threshold']),
     );
   }
 
@@ -61,12 +115,11 @@ class CovBadgeGen {
   }
 
   void generateBadge() async {
-    final coverageValue = await coverage();
-    _log.info('Coverage: $coverageValue');
-    _generateBadgeSvg(coverageValue.toInt());
+    final coverageValue = await coverageRatio();
+    _generateAndSaveSvg(coverageValue.toInt());
   }
 
-  Future<double> coverage() {
+  Future<double> coverageRatio() {
     return _readAndGetCoverage();
   }
 
@@ -100,15 +153,17 @@ class CovBadgeGen {
     return completer.future;
   }
 
-  void generateBadgeSvg(int ratio) {
-    return _generateBadgeSvg(ratio);
+  void _generateAndSaveSvg(int ratio) {
+    final badgeSvgStr = generateBadgeSvg(ratio);
+    _outputFile.writeAsStringSync(badgeSvgStr, flush: true);
+    _log.info('Badge created successfully with Coverage ration of $ratio%');
   }
 
-  void _generateBadgeSvg(int ratio) {
-    String selectedColor = '';
-    if (ratio <= errorThreshold) {
+  String generateBadgeSvg(int ratio) {
+    String? selectedColor = '';
+    if (ratio <= (errorThreshold ?? 0)) {
       selectedColor = errorColor;
-    } else if (ratio <= warningThreshold) {
+    } else if (ratio <= (warningThreshold ?? 0)) {
       selectedColor = warningColor;
     } else {
       selectedColor = successColor;
@@ -133,8 +188,7 @@ class CovBadgeGen {
       </g>
       </svg>
     """;
-    _outputFile.writeAsStringSync(badgeSvgStr, flush: true);
-    _log.info('Badge created successfully with Coverage ration of $ratio%');
+    return badgeSvgStr;
   }
 }
 

@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
@@ -195,7 +196,7 @@ class CovBadgeGen {
 void _setupLogger() {
   Logger.root.level = Level.ALL; // defaults to Level.INFO
   Logger.root.onRecord.listen((record) {
-    print(
+    debugPrint(
       '${record.level.name}: [COV_BADGE_GEN] : ${record.time}: ${record.message}',
     );
   });

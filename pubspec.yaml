@@ -1,6 +1,6 @@
 name: cov_badge_gen
 description: Badge generator from test coverage
-version: 0.0.1
+version: 0.0.2
 homepage: https://github.com/JamshedAlamQaderi/flutter-test-cov-badge-gen
 
 environment:
